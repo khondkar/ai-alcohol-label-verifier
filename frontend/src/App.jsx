@@ -1,10 +1,20 @@
 import { useState } from "react";
 import "./App.css";
 
+const fields = [
+  ["brand_name", "Brand Name"],
+  ["class_type", "Class / Type"],
+  ["alcohol_content", "Alcohol Content"],
+  ["net_contents", "Net Contents"],
+  ["producer_name_address", "Producer Name / Address"],
+  ["country_of_origin", "Country of Origin"],
+];
+
 function App() {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
+  const [error, setError] = useState("");
 
   const [form, setForm] = useState({
     brand_name: "",
@@ -22,20 +32,20 @@ function App() {
 
   const verifyLabel = async () => {
     if (!file) {
-      alert("Please upload a label image.");
+      setError("Please upload a label image.");
       return;
     }
 
     setLoading(true);
     setResult(null);
+    setError("");
 
     try {
-      // Step 1: Extract label data
       const uploadData = new FormData();
       uploadData.append("file", file);
 
       const uploadResponse = await fetch(
-        "http://127.0.0.1:8000/upload-label",
+        "https://ai-alcohol-label-verifier.onrender.com/upload-label",
         {
           method: "POST",
           body: uploadData,
@@ -43,14 +53,13 @@ function App() {
       );
 
       if (!uploadResponse.ok) {
-        throw new Error("Label extraction failed.");
+        throw new Error("Unable to analyze the label.");
       }
 
       const uploadResult = await uploadResponse.json();
 
-      // Step 2: Compare against application data
       const verifyResponse = await fetch(
-        "http://127.0.0.1:8000/verify",
+        "https://ai-alcohol-label-verifier.onrender.com/verify",
         {
           method: "POST",
           headers: {
@@ -64,13 +73,12 @@ function App() {
       );
 
       if (!verifyResponse.ok) {
-        throw new Error("Verification failed.");
+        throw new Error("Unable to verify the label.");
       }
 
-      const verification = await verifyResponse.json();
-      setResult(verification);
-    } catch (error) {
-      alert(error.message);
+      setResult(await verifyResponse.json());
+    } catch (err) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -78,42 +86,57 @@ function App() {
 
   return (
     <main className="container">
-      <h1>Alcohol Label Verifier</h1>
-
-      <p className="subtitle">
-        AI-assisted alcohol beverage label compliance review
-      </p>
+      <header className="header">
+        <div>
+          <span className="eyebrow">TTB REVIEW PROTOTYPE</span>
+          <h1>Alcohol Label Verifier</h1>
+          <p>
+            AI-assisted comparison of beverage label artwork
+            against application data.
+          </p>
+        </div>
+      </header>
 
       <section className="card">
-        <h2>1. Upload Label</h2>
+        <div className="step">STEP 1</div>
+        <h2>Upload Label Artwork</h2>
+        <p className="help">
+          Upload a JPG, PNG, or WebP image of the beverage label.
+        </p>
 
         <input
           type="file"
           accept="image/jpeg,image/png,image/webp"
           onChange={(e) => setFile(e.target.files[0])}
         />
+
+        {file && (
+          <p className="selected">
+            Selected: <strong>{file.name}</strong>
+          </p>
+        )}
       </section>
 
       <section className="card">
-        <h2>2. Application Data</h2>
+        <div className="step">STEP 2</div>
+        <h2>Application Data</h2>
+        <p className="help">
+          Enter the values submitted in the application.
+        </p>
 
-        {[
-          ["brand_name", "Brand Name"],
-          ["class_type", "Class / Type"],
-          ["alcohol_content", "Alcohol Content"],
-          ["net_contents", "Net Contents"],
-          ["producer_name_address", "Producer Name / Address"],
-          ["country_of_origin", "Country of Origin"],
-        ].map(([name, label]) => (
-          <label key={name}>
-            {label}
-            <input
-              name={name}
-              value={form[name]}
-              onChange={handleChange}
-            />
-          </label>
-        ))}
+        <div className="form-grid">
+          {fields.map(([name, label]) => (
+            <label key={name}>
+              {label}
+              <input
+                name={name}
+                value={form[name]}
+                onChange={handleChange}
+                placeholder={label}
+              />
+            </label>
+          ))}
+        </div>
 
         <label>
           Government Warning
@@ -122,48 +145,67 @@ function App() {
             value={form.government_warning}
             onChange={handleChange}
             rows="5"
+            placeholder="Enter the required government warning exactly as submitted."
           />
         </label>
       </section>
+
+      {error && <div className="error-message">{error}</div>}
 
       <button
         className="verify-button"
         onClick={verifyLabel}
         disabled={loading}
       >
-        {loading ? "Analyzing Label..." : "Verify Label"}
+        {loading ? "Analyzing label..." : "Verify Label"}
       </button>
 
       {result && (
         <section className="card results">
-          <h2>
-            Verification Result: {result.overall_status}
-          </h2>
+          <div className="step">STEP 3</div>
 
-          {Object.entries(result.results).map(
-            ([field, data]) => (
-              <div
-                key={field}
-                className={`result ${data.status.toLowerCase()}`}
-              >
+          <div className="result-header">
+            <h2>Verification Results</h2>
+            <span
+              className={`overall ${result.overall_status.toLowerCase()}`}
+            >
+              {result.overall_status}
+            </span>
+          </div>
+
+          {Object.entries(result.results).map(([field, data]) => (
+            <div
+              key={field}
+              className={`result ${data.status.toLowerCase()}`}
+            >
+              <div className="result-title">
                 <strong>
                   {field.replaceAll("_", " ").toUpperCase()}
                 </strong>
-
                 <span>{data.status}</span>
-
-                <p>{data.reason}</p>
-
-                <small>
-                  Expected: {data.expected || "Not provided"}
-                  <br />
-                  Label: {data.actual || "Not detected"}
-                </small>
               </div>
-            )
-          )}
+
+              <p>{data.reason}</p>
+
+              <div className="comparison">
+                <div>
+                  <b>Application</b>
+                  <p>{data.expected || "Not provided"}</p>
+                </div>
+
+                <div>
+                  <b>Detected on label</b>
+                  <p>{data.actual || "Not detected"}</p>
+                </div>
+              </div>
+            </div>
+          ))}
         </section>
       )}
+
+      <footer>
+        AI-assisted prototype • Human review recommended for final compliance decisions
+      </footer>
     </main>
   );
 }
