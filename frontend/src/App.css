@@ -1,0 +1,101 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f6f8;
+  color: #1f2937;
+}
+
+.container {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 20px;
+}
+
+h1 {
+  margin-bottom: 5px;
+}
+
+.subtitle {
+  color: #6b7280;
+  margin-bottom: 30px;
+}
+
+.card {
+  background: white;
+  padding: 24px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+}
+
+label {
+  display: block;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+input,
+textarea {
+  width: 100%;
+  padding: 10px;
+  margin-top: 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 15px;
+}
+
+.verify-button {
+  width: 100%;
+  padding: 14px;
+  border: 0;
+  border-radius: 7px;
+  background: #111827;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+.verify-button:disabled {
+  opacity: 0.6;
+}
+
+.result {
+  padding: 15px;
+  margin-top: 12px;
+  border-radius: 7px;
+  border-left: 5px solid;
+}
+
+.result span {
+  float: right;
+  font-weight: bold;
+}
+
+.pass {
+  background: #ecfdf5;
+  border-color: #10b981;
+}
+
+.fail {
+  background: #fef2f2;
+  border-color: #ef4444;
+}
+
+.review {
+  background: #fffbeb;
+  border-color: #f59e0b;
+}
+
+.result p {
+  margin: 8px 0;
+}
+
+.result small {
+  color: #4b5563;
+}
